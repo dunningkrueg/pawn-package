@@ -1,0 +1,83 @@
+{
+    "name": "pawn-package",
+    "displayName": "Pawn Package",
+    "description": "SAMP/open.mp package manager for VSCode",
+    "version": "1.0.1",
+    "publisher": "dunningkrueg",
+    "private": false,
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.84.2"
+    },
+    "categories": [
+        "Other",
+        "Programming Languages",
+        "Snippets"
+    ],
+    "keywords": [
+        "samp",
+        "openmp",
+        "pawn",
+        "package",
+        "manager"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "pawn-package.download",
+                "title": "Pawn Package: Download Package"
+            }
+        ],
+        "configuration": {
+            "title": "Pawn Package",
+            "properties": {
+                "pawnPackage.githubToken": {
+                    "type": "string",
+                    "default": "",
+                    "description": "GitHub Personal Access Token for increased rate limits"
+                },
+                "pawnPackage.autoScanWorkspace": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically scan workspace for Pawno/Qawno directories"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js",
+        "package": "vsce package",
+        "publish": "vsce publish"
+    },
+    "dependencies": {
+        "axios": "^1.6.2",
+        "@types/node": "^20.10.0",
+        "@types/vscode": "^1.84.2"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.6",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "^6.13.1",
+        "eslint": "^8.54.0",
+        "glob": "^10.3.10",
+        "mocha": "^10.2.0",
+        "typescript": "^5.3.2",
+        "@vscode/vsce": "^3.2.2",
+        "adm-zip": "^0.5.10",
+        "@types/adm-zip": "^0.5.5"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dunningkrueg/pawn-package.git"
+    },
+    "bugs": {
+        "url": "https://github.com/dunningkrueg/pawn-package/issues"
+    },
+    "homepage": "https://github.com/dunningkrueg/pawn-package#readme"
+} 

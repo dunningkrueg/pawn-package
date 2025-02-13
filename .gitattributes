@@ -1,0 +1,18 @@
+# Ensure consistent line endings
+* text=auto
+
+# Treat TypeScript files as text
+*.ts text
+
+# Treat JSON files as text
+*.json text
+
+# Treat Markdown files as text
+*.md text
+
+# Treat JavaScript files as text
+*.js text
+
+# Treat configuration files as text
+*.yml text
+*.yaml text
