@@ -13,7 +13,7 @@ Pawn Package is a Visual Studio Code extension designed to simplify the manageme
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/openmultiplayer/pawn-package.git
+   git clone https://github.com/dunningkrueg/pawn-package.git
    ```
 2. Navigate to the project directory:
    ```bash
