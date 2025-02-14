@@ -16,7 +16,6 @@ You can install the extension via the [Visual Studio Code Marketplace](https://m
 2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing `Ctrl+Shift+X`.
 3. Search for "Pawn Package".
 4. Click "Install" to install the extension.
->>>>>>> backup-changes
 
 ## Usage
 
