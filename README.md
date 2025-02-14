@@ -10,25 +10,12 @@ Pawn Package is a Visual Studio Code extension designed to simplify the manageme
 - **Fallback Mechanism**: Attempts alternative sources if the primary source fails.
 
 ## Installation
+You can install the extension via the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dunningkrueg.pawn-package).
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/openmultiplayer/pawn-package.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd pawn-package
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Compile the extension:
-   ```bash
-   npm run compile
-   ```
-5. Run the extension in VSCode:
-   - Press `F5` to open a new VSCode window with the extension installed.
+1. Open Visual Studio Code.
+2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing `Ctrl+Shift+X`.
+3. Search for "Pawn Package".
+4. Click "Install" to install the extension.
 
 ## Usage
 
@@ -43,3 +30,8 @@ Contributions are welcome! Please fork this repository and submit a pull request
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Links
+
+- [GitHub Repository](https://github.com/dunningkrueg/pawn-package)
+- [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dunningkrueg.pawn-package)
