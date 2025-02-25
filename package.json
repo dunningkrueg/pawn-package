@@ -1,0 +1,61 @@
+{
+  "name": "pawn-package",
+  "displayName": "Pawn Package",
+  "description": "Download and manage SAMP/open.mp packages (includes and plugins)",
+  "version": "1.0.0",
+  "publisher": "dunningkrueg",
+  "author": {
+    "name": "dunningkrueg"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dunningkrueg/pawn-package.git"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:pawnPackage.downloadPackage",
+    "workspaceContains:**/*.pwn",
+    "workspaceContains:**/*.inc"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pawnPackage.downloadPackage",
+        "title": "Pawn Package: Download Package"
+      },
+      {
+        "command": "pawnPackage.scanWorkspace",
+        "title": "Pawn Package: Scan Workspace"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^22.13.5",
+    "@types/vscode": "^1.93.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "fs-extra": "^11.3.0",
+    "glob": "^8.1.0"
+  }
+}
