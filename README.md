@@ -69,7 +69,7 @@ Currently, the extension works best with repositories that have:
 
 ## License
 
-ISC
+[ISC](LICENSE)
 
 ---
 
