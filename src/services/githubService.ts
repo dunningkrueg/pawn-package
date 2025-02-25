@@ -79,13 +79,11 @@ export class GithubService {
         const downloadedFiles: string[] = [];
         
         try {
-            // Get repository contents
             const contents = await this.getRepositoryContents(owner, repo);
             
             // Find include files and directories
             for (const item of contents) {
                 if (item.type === 'file' && item.name.endsWith('.inc') && item.download_url) {
-                    // Download include file
                     const filePath = path.join(targetDir, item.name);
                     const response = await axios({
                         method: 'GET',
@@ -96,7 +94,6 @@ export class GithubService {
                     await fs.writeFile(filePath, response.data);
                     downloadedFiles.push(filePath);
                 } else if (item.type === 'dir' && item.path.includes('include')) {
-                    // Recursively download from include directory
                     const subContents = await this.getRepositoryContents(owner, repo, item.path);
                     
                     for (const subItem of subContents) {
@@ -129,13 +126,11 @@ export class GithubService {
         const downloadedFiles: string[] = [];
         
         try {
-            // Get latest release
             const release = await this.getLatestRelease(owner, repo);
             if (!release) {
                 return downloadedFiles;
             }
             
-            // Download plugin files (.dll and .so)
             for (const asset of release.assets) {
                 if (asset.name.endsWith('.dll') || asset.name.endsWith('.so')) {
                     const filePath = path.join(targetDir, asset.name);

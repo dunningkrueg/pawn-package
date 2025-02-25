@@ -10,11 +10,9 @@ import { scanWorkspace } from './scanWorkspace';
  */
 export async function downloadPackage(): Promise<void> {
     try {
-        // Check if workspace has valid directories
         const context = getExtensionContext();
         const hasValidDirectories = context.globalState.get('hasValidDirectories', false);
         
-        // If no valid directories, run scan and check again
         if (!hasValidDirectories) {
             const scanResult = await scanWorkspace();
             if (!scanResult) {
@@ -23,7 +21,6 @@ export async function downloadPackage(): Promise<void> {
             }
         }
         
-        // Get repository information from user
         const repoInput = await vscode.window.showInputBox({
             prompt: 'Enter GitHub repository (format: owner/repo)',
             placeHolder: 'e.g. owner/repo'
@@ -33,32 +30,26 @@ export async function downloadPackage(): Promise<void> {
             return;
         }
         
-        // Validate input format
         const [owner, repo] = repoInput.split('/');
         if (!owner || !repo) {
             vscode.window.showErrorMessage('Invalid repository format. Please use owner/repo format.');
             return;
         }
         
-        // Show progress
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Downloading package ${owner}/${repo}`,
             cancellable: true
         }, async (progress, token) => {
-            // Create GitHub service
             const githubService = new GithubService();
             
             try {
-                // Get directories from extension context
                 const includeDirectories: string[] = context.globalState.get('includeDirectories', []);
                 const pluginDirectories: string[] = context.globalState.get('pluginDirectories', []);
                 
-                // Download include files
                 if (includeDirectories.length > 0) {
                     progress.report({ message: 'Downloading include files...' });
                     
-                    // Use the first include directory
                     const includeDir = includeDirectories[0];
                     await ensureDirectory(includeDir);
                     
@@ -70,11 +61,9 @@ export async function downloadPackage(): Promise<void> {
                     }
                 }
                 
-                // Download plugin files
                 if (pluginDirectories.length > 0) {
                     progress.report({ message: 'Downloading plugin files...' });
                     
-                    // Use the first plugin directory
                     const pluginDir = pluginDirectories[0];
                     await ensureDirectory(pluginDir);
                     
@@ -86,14 +75,12 @@ export async function downloadPackage(): Promise<void> {
                     }
                 }
                 
-                // Clean up
                 await githubService.cleanup();
                 
                 vscode.window.showInformationMessage(`Package ${owner}/${repo} downloaded successfully!`);
             } catch (error) {
                 vscode.window.showErrorMessage(`Error downloading package: ${error}`);
                 
-                // Clean up on error
                 await githubService.cleanup();
             }
         });

@@ -17,7 +17,7 @@ export async function findIncludeDirectories(): Promise<string[]> {
     for (const folder of workspaceFolders) {
         const folderPath = folder.uri.fsPath;
         
-        // Check for specific include directories first (direct check)
+        
         const specificPaths = [
             path.join(folderPath, 'pawno', 'include'),
             path.join(folderPath, 'qawno', 'include'),
@@ -32,7 +32,7 @@ export async function findIncludeDirectories(): Promise<string[]> {
             }
         }
         
-        // Then use glob for deeper search
+        
         const patterns = [
             path.join(folderPath, '**/pawno/include'),
             path.join(folderPath, '**/qawno/include'),
@@ -51,7 +51,7 @@ export async function findIncludeDirectories(): Promise<string[]> {
                     });
                 });
                 
-                // Filter out duplicates and add to the list
+                
                 for (const match of matches) {
                     if (!includeDirectories.includes(match) && fs.existsSync(match) && fs.statSync(match).isDirectory()) {
                         includeDirectories.push(match);
@@ -81,7 +81,7 @@ export async function findPluginDirectories(): Promise<string[]> {
     for (const folder of workspaceFolders) {
         const folderPath = folder.uri.fsPath;
         
-        // Check for specific plugin directories first (direct check)
+        
         const specificPaths = [
             path.join(folderPath, 'plugins'),
             path.join(folderPath, 'pawno', 'plugins'),
@@ -96,7 +96,7 @@ export async function findPluginDirectories(): Promise<string[]> {
             }
         }
         
-        // Then use glob for deeper search
+        
         const patterns = [
             path.join(folderPath, '**/plugins'),
             path.join(folderPath, '**/pawno/plugins'),
@@ -115,7 +115,7 @@ export async function findPluginDirectories(): Promise<string[]> {
                     });
                 });
                 
-                // Filter out duplicates and add to the list
+               
                 for (const match of matches) {
                     if (!pluginDirectories.includes(match) && fs.existsSync(match) && fs.statSync(match).isDirectory()) {
                         pluginDirectories.push(match);

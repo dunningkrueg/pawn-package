@@ -9,22 +9,17 @@ import { getExtensionContext } from '../extension';
  */
 export async function scanWorkspace(): Promise<boolean> {
     try {
-        // Find include directories
         const includeDirectories = await findIncludeDirectories();
         
-        // Find plugin directories
         const pluginDirectories = await findPluginDirectories();
         
-        // Check if any valid directories were found
         const hasValidDirectories = includeDirectories.length > 0 || pluginDirectories.length > 0;
         
-        // Store directories in global state for later use
         const context = getExtensionContext();
         context.globalState.update('includeDirectories', includeDirectories);
         context.globalState.update('pluginDirectories', pluginDirectories);
         context.globalState.update('hasValidDirectories', hasValidDirectories);
         
-        // Show found directories
         if (hasValidDirectories) {
             const includeMsg = includeDirectories.length > 0 
                 ? `Include directories: ${includeDirectories.map(d => path.basename(path.dirname(d)) + '/' + path.basename(d)).join(', ')}`
