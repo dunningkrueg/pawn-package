@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { downloadPackage } from './commands/downloadPackage';
 import { scanWorkspace } from './commands/scanWorkspace';
 
-// Store extension context for access from other modules
 let extensionContext: vscode.ExtensionContext;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -15,7 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('pawnPackage.scanWorkspace', scanWorkspace)
     );
 
-    // Automatically scan workspace on activation
     scanWorkspace().then(hasValidDirectories => {
         if (hasValidDirectories) {
             console.log('Valid directories found in workspace');
