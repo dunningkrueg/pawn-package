@@ -8,7 +8,6 @@ A Visual Studio Code extension for downloading and managing SAMP/open.mp package
 
 - Only a limited number of packages can be downloaded at this time
 - Some repositories may not work correctly due to different structures
-- Currently tested with repositories like Y-Less/sscanf
 - More features and compatibility improvements will be added in future updates
 
 ## Features
