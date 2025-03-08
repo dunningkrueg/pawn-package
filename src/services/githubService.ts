@@ -2,6 +2,9 @@ import axios from 'axios';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as os from 'os';
+import * as tar from 'tar';
+import decompress from 'decompress';
+import AdmZip from 'adm-zip';
 
 interface GithubRelease {
     tag_name: string;
@@ -16,6 +19,14 @@ interface GithubContent {
     path: string;
     type: string;
     download_url: string | null;
+}
+
+interface ExtractedContent {
+    plugins: string[];
+    components: {
+        source: string;
+        target: string;
+    }[];
 }
 
 export class GithubService {
@@ -33,9 +44,18 @@ export class GithubService {
         try {
             const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/latest`);
             return response.data;
-        } catch (error) {
-            console.error(`Error fetching latest release for ${owner}/${repo}: ${error}`);
-            return null;
+        } catch (latestError) {
+            try {
+                const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases`);
+                const releases = response.data;
+                if (releases && releases.length > 0) {
+                    return releases[0];
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error fetching releases for ${owner}/${repo}: ${error}`);
+                return null;
+            }
         }
     }
 
@@ -81,7 +101,7 @@ export class GithubService {
         try {
             const contents = await this.getRepositoryContents(owner, repo);
             
-            // Find include files and directories
+            
             for (const item of contents) {
                 if (item.type === 'file' && item.name.endsWith('.inc') && item.download_url) {
                     const filePath = path.join(targetDir, item.name);
@@ -120,34 +140,186 @@ export class GithubService {
     }
 
     /**
+     * Find plugins in a repository
+     */
+    async findPluginsInRepository(owner: string, repo: string, path: string = ''): Promise<GithubContent[]> {
+        const plugins: GithubContent[] = [];
+        
+        try {
+            const contents = await this.getRepositoryContents(owner, repo, path);
+            
+            for (const item of contents) {
+                if (item.type === 'file') {
+                    if ((item.name.endsWith('.dll') || item.name.endsWith('.so')) && item.download_url) {
+                        plugins.push(item);
+                    }
+                } else if (item.type === 'dir') {
+                    const subPlugins = await this.findPluginsInRepository(owner, repo, item.path);
+                    plugins.push(...subPlugins);
+                }
+            }
+        } catch (error) {
+            console.error(`Error finding plugins in ${owner}/${repo}/${path}: ${error}`);
+        }
+        
+        return plugins;
+    }
+
+    private async extractArchive(archivePath: string, extractPath: string): Promise<ExtractedContent> {
+        const result: ExtractedContent = {
+            plugins: [],
+            components: []
+        };
+        
+        try {
+            if (archivePath.endsWith('.zip')) {
+                const zip = new AdmZip(archivePath);
+                zip.extractAllTo(extractPath, true);
+            } else if (archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
+                await tar.extract({
+                    file: archivePath,
+                    cwd: extractPath
+                });
+            } else {
+                await decompress(archivePath, extractPath);
+            }
+            
+            const findContent = async (dir: string, isInComponents: boolean = false) => {
+                const items = await fs.readdir(dir, { withFileTypes: true });
+                
+                for (const item of items) {
+                    const fullPath = path.join(dir, item.name);
+                    
+                    if (item.isDirectory()) {
+                        if (item.name === 'components') {
+                            await findContent(fullPath, true);
+                        } else {
+                            await findContent(fullPath, isInComponents);
+                        }
+                    } else if (item.name.endsWith('.dll') || item.name.endsWith('.so')) {
+                        if (!isInComponents) {
+                            result.plugins.push(fullPath);
+                        }
+                    }
+                    
+                    if (isInComponents) {
+                        const relativePath = path.relative(extractPath, fullPath);
+                        result.components.push({
+                            source: fullPath,
+                            target: relativePath
+                        });
+                    }
+                }
+            };
+            
+            await findContent(extractPath);
+            return result;
+        } catch (error) {
+            console.error(`Error extracting archive ${archivePath}: ${error}`);
+            return result;
+        }
+    }
+
+    /**
      * Download plugin files from the latest release of a GitHub repository
      */
     async downloadPluginFiles(owner: string, repo: string, targetDir: string): Promise<string[]> {
         const downloadedFiles: string[] = [];
+        const tempExtractDir = path.join(this.tempDir, `${owner}-${repo}-extract`);
+        const rootDir = path.dirname(targetDir); 
         
         try {
+            await fs.ensureDir(tempExtractDir);
+            const plugins = await this.findPluginsInRepository(owner, repo);
             const release = await this.getLatestRelease(owner, repo);
-            if (!release) {
-                return downloadedFiles;
-            }
             
-            for (const asset of release.assets) {
-                if (asset.name.endsWith('.dll') || asset.name.endsWith('.so')) {
-                    const filePath = path.join(targetDir, asset.name);
-                    const response = await axios({
-                        method: 'GET',
-                        url: asset.browser_download_url,
-                        responseType: 'arraybuffer'
-                    });
-                    
-                    await fs.writeFile(filePath, response.data);
-                    downloadedFiles.push(filePath);
+            if (release && release.assets) {
+                for (const asset of release.assets) {
+                    try {
+                        const isArchive = asset.name.match(/\.(zip|tar\.gz|tgz|rar|7z)$/i);
+                        const isPlugin = asset.name.endsWith('.dll') || asset.name.endsWith('.so');
+                        
+                        if (isPlugin) {
+                            const filePath = path.join(targetDir, asset.name);
+                            const response = await axios({
+                                method: 'GET',
+                                url: asset.browser_download_url,
+                                responseType: 'arraybuffer'
+                            });
+                            
+                            await fs.writeFile(filePath, response.data);
+                            downloadedFiles.push(filePath);
+                        } else if (isArchive) {
+                            const archivePath = path.join(this.tempDir, asset.name);
+                            const response = await axios({
+                                method: 'GET',
+                                url: asset.browser_download_url,
+                                responseType: 'arraybuffer'
+                            });
+                            
+                            await fs.writeFile(archivePath, response.data);
+                            const extracted = await this.extractArchive(archivePath, tempExtractDir);
+                            
+                            
+                            for (const pluginPath of extracted.plugins) {
+                                const fileName = path.basename(pluginPath);
+                                const targetPath = path.join(targetDir, fileName);
+                                
+                                if (!downloadedFiles.includes(targetPath)) {
+                                    await fs.copy(pluginPath, targetPath);
+                                    downloadedFiles.push(targetPath);
+                                }
+                            }
+                            
+                            
+                            if (extracted.components.length > 0) {
+                                const componentsDir = path.join(rootDir, 'components');
+                                await fs.ensureDir(componentsDir);
+                                
+                                for (const component of extracted.components) {
+                                    const targetPath = path.join(rootDir, component.target);
+                                    const componentDir = path.dirname(targetPath);
+                                    
+                                    await fs.ensureDir(componentDir);
+                                    await fs.copy(component.source, targetPath);
+                                }
+                            }
+                            
+                            await fs.remove(archivePath);
+                        }
+                    } catch (downloadError) {
+                        console.error(`Failed to process asset ${asset.name}: ${downloadError}`);
+                    }
                 }
             }
             
+           
+            for (const plugin of plugins) {
+                const isInComponents = plugin.path.includes('components/');
+                if (!isInComponents && plugin.download_url && (plugin.name.endsWith('.dll') || plugin.name.endsWith('.so'))) {
+                    try {
+                        const filePath = path.join(targetDir, plugin.name);
+                        if (!downloadedFiles.includes(filePath)) {
+                            const response = await axios({
+                                method: 'GET',
+                                url: plugin.download_url,
+                                responseType: 'arraybuffer'
+                            });
+                            
+                            await fs.writeFile(filePath, response.data);
+                            downloadedFiles.push(filePath);
+                        }
+                    } catch (downloadError) {
+                        console.error(`Failed to download plugin ${plugin.name}: ${downloadError}`);
+                    }
+                }
+            }
+            
+            await fs.remove(tempExtractDir);
             return downloadedFiles;
         } catch (error) {
             console.error(`Error downloading plugin files from ${owner}/${repo}: ${error}`);
+            await fs.remove(tempExtractDir);
             return downloadedFiles;
         }
     }
