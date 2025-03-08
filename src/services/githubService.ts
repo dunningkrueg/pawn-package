@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as tar from 'tar';
 import decompress from 'decompress';
 import AdmZip from 'adm-zip';
+import { Speziell } from '../Speziell/Speziell';
 
 interface GithubRelease {
     tag_name: string;
@@ -97,44 +98,123 @@ export class GithubService {
      */
     async downloadIncludeFiles(owner: string, repo: string, targetDir: string): Promise<string[]> {
         const downloadedFiles: string[] = [];
+        const tempExtractDir = path.join(this.tempDir, `${owner}-${repo}-include-extract`);
         
         try {
-            const contents = await this.getRepositoryContents(owner, repo);
-            
-            
-            for (const item of contents) {
-                if (item.type === 'file' && item.name.endsWith('.inc') && item.download_url) {
-                    const filePath = path.join(targetDir, item.name);
-                    const response = await axios({
-                        method: 'GET',
-                        url: item.download_url,
-                        responseType: 'arraybuffer'
-                    });
-                    
-                    await fs.writeFile(filePath, response.data);
-                    downloadedFiles.push(filePath);
-                } else if (item.type === 'dir' && item.path.includes('include')) {
-                    const subContents = await this.getRepositoryContents(owner, repo, item.path);
-                    
-                    for (const subItem of subContents) {
-                        if (subItem.type === 'file' && subItem.name.endsWith('.inc') && subItem.download_url) {
-                            const filePath = path.join(targetDir, subItem.name);
+            await fs.ensureDir(tempExtractDir);
+            const release = await this.getLatestRelease(owner, repo);
+            let foundInRelease = false;
+
+            // Try to get includes from release first
+            if (release && release.assets) {
+                for (const asset of release.assets) {
+                    try {
+                        const isArchive = asset.name.match(/\.(zip|tar\.gz|tgz|rar|7z)$/i);
+                        const isInclude = asset.name.endsWith('.inc');
+
+                        if (isInclude) {
+                            const filePath = path.join(targetDir, asset.name);
                             const response = await axios({
                                 method: 'GET',
-                                url: subItem.download_url,
+                                url: asset.browser_download_url,
                                 responseType: 'arraybuffer'
                             });
                             
                             await fs.writeFile(filePath, response.data);
                             downloadedFiles.push(filePath);
+                            foundInRelease = true;
+                        } else if (isArchive) {
+                            const archivePath = path.join(this.tempDir, asset.name);
+                            const response = await axios({
+                                method: 'GET',
+                                url: asset.browser_download_url,
+                                responseType: 'arraybuffer'
+                            });
+                            
+                            await fs.writeFile(archivePath, response.data);
+                            
+                            // Extract and check for includes
+                            if (archivePath.endsWith('.zip')) {
+                                const zip = new AdmZip(archivePath);
+                                zip.extractAllTo(tempExtractDir, true);
+                            } else if (archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
+                                await tar.extract({
+                                    file: archivePath,
+                                    cwd: tempExtractDir
+                                });
+                            } else {
+                                await decompress(archivePath, tempExtractDir);
+                            }
+
+                            // Find all .inc files recursively
+                            const findIncludes = async (dir: string) => {
+                                const items = await fs.readdir(dir, { withFileTypes: true });
+                                
+                                for (const item of items) {
+                                    const fullPath = path.join(dir, item.name);
+                                    
+                                    if (item.isDirectory()) {
+                                        await findIncludes(fullPath);
+                                    } else if (item.name.endsWith('.inc')) {
+                                        const targetPath = path.join(targetDir, item.name);
+                                        if (!downloadedFiles.includes(targetPath)) {
+                                            await fs.copy(fullPath, targetPath);
+                                            downloadedFiles.push(targetPath);
+                                            foundInRelease = true;
+                                        }
+                                    }
+                                }
+                            };
+                            
+                            await findIncludes(tempExtractDir);
+                            await fs.remove(archivePath);
+                        }
+                    } catch (downloadError) {
+                        console.error(`Failed to process asset ${asset.name}: ${downloadError}`);
+                    }
+                }
+            }
+
+            // If no includes found in release, try repository
+            if (!foundInRelease) {
+                const contents = await this.getRepositoryContents(owner, repo);
+                
+                for (const item of contents) {
+                    if (item.type === 'file' && item.name.endsWith('.inc') && item.download_url) {
+                        const filePath = path.join(targetDir, item.name);
+                        const response = await axios({
+                            method: 'GET',
+                            url: item.download_url,
+                            responseType: 'arraybuffer'
+                        });
+                        
+                        await fs.writeFile(filePath, response.data);
+                        downloadedFiles.push(filePath);
+                    } else if (item.type === 'dir' && item.path.includes('include')) {
+                        const subContents = await this.getRepositoryContents(owner, repo, item.path);
+                        
+                        for (const subItem of subContents) {
+                            if (subItem.type === 'file' && subItem.name.endsWith('.inc') && subItem.download_url) {
+                                const filePath = path.join(targetDir, subItem.name);
+                                const response = await axios({
+                                    method: 'GET',
+                                    url: subItem.download_url,
+                                    responseType: 'arraybuffer'
+                                });
+                                
+                                await fs.writeFile(filePath, response.data);
+                                downloadedFiles.push(filePath);
+                            }
                         }
                     }
                 }
             }
             
+            await fs.remove(tempExtractDir);
             return downloadedFiles;
         } catch (error) {
             console.error(`Error downloading include files from ${owner}/${repo}: ${error}`);
+            await fs.remove(tempExtractDir);
             return downloadedFiles;
         }
     }
@@ -226,7 +306,7 @@ export class GithubService {
     async downloadPluginFiles(owner: string, repo: string, targetDir: string): Promise<string[]> {
         const downloadedFiles: string[] = [];
         const tempExtractDir = path.join(this.tempDir, `${owner}-${repo}-extract`);
-        const rootDir = path.dirname(targetDir); 
+        const rootDir = path.dirname(targetDir);
         
         try {
             await fs.ensureDir(tempExtractDir);
@@ -240,15 +320,18 @@ export class GithubService {
                         const isPlugin = asset.name.endsWith('.dll') || asset.name.endsWith('.so');
                         
                         if (isPlugin) {
-                            const filePath = path.join(targetDir, asset.name);
+                            const targetPath = path.join(
+                                Speziell.getTargetPath(rootDir, targetDir, asset.name),
+                                asset.name
+                            );
                             const response = await axios({
                                 method: 'GET',
                                 url: asset.browser_download_url,
                                 responseType: 'arraybuffer'
                             });
                             
-                            await fs.writeFile(filePath, response.data);
-                            downloadedFiles.push(filePath);
+                            await fs.writeFile(targetPath, response.data);
+                            downloadedFiles.push(targetPath);
                         } else if (isArchive) {
                             const archivePath = path.join(this.tempDir, asset.name);
                             const response = await axios({
@@ -260,10 +343,13 @@ export class GithubService {
                             await fs.writeFile(archivePath, response.data);
                             const extracted = await this.extractArchive(archivePath, tempExtractDir);
                             
-                            
+                            // Handle regular plugins
                             for (const pluginPath of extracted.plugins) {
                                 const fileName = path.basename(pluginPath);
-                                const targetPath = path.join(targetDir, fileName);
+                                const targetPath = path.join(
+                                    Speziell.getTargetPath(rootDir, targetDir, fileName),
+                                    fileName
+                                );
                                 
                                 if (!downloadedFiles.includes(targetPath)) {
                                     await fs.copy(pluginPath, targetPath);
@@ -271,7 +357,7 @@ export class GithubService {
                                 }
                             }
                             
-                            
+                            // Handle components
                             if (extracted.components.length > 0) {
                                 const componentsDir = path.join(rootDir, 'components');
                                 await fs.ensureDir(componentsDir);
@@ -293,21 +379,24 @@ export class GithubService {
                 }
             }
             
-           
+            // Handle plugins from repository
             for (const plugin of plugins) {
                 const isInComponents = plugin.path.includes('components/');
                 if (!isInComponents && plugin.download_url && (plugin.name.endsWith('.dll') || plugin.name.endsWith('.so'))) {
                     try {
-                        const filePath = path.join(targetDir, plugin.name);
-                        if (!downloadedFiles.includes(filePath)) {
+                        const targetPath = path.join(
+                            Speziell.getTargetPath(rootDir, targetDir, plugin.name),
+                            plugin.name
+                        );
+                        if (!downloadedFiles.includes(targetPath)) {
                             const response = await axios({
                                 method: 'GET',
                                 url: plugin.download_url,
                                 responseType: 'arraybuffer'
                             });
                             
-                            await fs.writeFile(filePath, response.data);
-                            downloadedFiles.push(filePath);
+                            await fs.writeFile(targetPath, response.data);
+                            downloadedFiles.push(targetPath);
                         }
                     } catch (downloadError) {
                         console.error(`Failed to download plugin ${plugin.name}: ${downloadError}`);
