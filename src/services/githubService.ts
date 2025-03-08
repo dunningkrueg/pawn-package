@@ -105,7 +105,7 @@ export class GithubService {
             const release = await this.getLatestRelease(owner, repo);
             let foundInRelease = false;
 
-            // Try to get includes from release first
+            
             if (release && release.assets) {
                 for (const asset of release.assets) {
                     try {
@@ -133,7 +133,7 @@ export class GithubService {
                             
                             await fs.writeFile(archivePath, response.data);
                             
-                            // Extract and check for includes
+                            
                             if (archivePath.endsWith('.zip')) {
                                 const zip = new AdmZip(archivePath);
                                 zip.extractAllTo(tempExtractDir, true);
@@ -146,7 +146,7 @@ export class GithubService {
                                 await decompress(archivePath, tempExtractDir);
                             }
 
-                            // Find all .inc files recursively
+                            
                             const findIncludes = async (dir: string) => {
                                 const items = await fs.readdir(dir, { withFileTypes: true });
                                 
@@ -175,7 +175,7 @@ export class GithubService {
                 }
             }
 
-            // If no includes found in release, try repository
+            
             if (!foundInRelease) {
                 const contents = await this.getRepositoryContents(owner, repo);
                 
@@ -343,7 +343,7 @@ export class GithubService {
                             await fs.writeFile(archivePath, response.data);
                             const extracted = await this.extractArchive(archivePath, tempExtractDir);
                             
-                            // Handle regular plugins
+                            
                             for (const pluginPath of extracted.plugins) {
                                 const fileName = path.basename(pluginPath);
                                 const targetPath = path.join(
@@ -357,7 +357,7 @@ export class GithubService {
                                 }
                             }
                             
-                            // Handle components
+                            
                             if (extracted.components.length > 0) {
                                 const componentsDir = path.join(rootDir, 'components');
                                 await fs.ensureDir(componentsDir);
