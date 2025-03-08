@@ -36,7 +36,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        npm ci
+        npm install
         npm install -g eslint
       
     - name: Run ESLint
@@ -62,7 +62,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     
     - name: Install dependencies
-      run: npm ci
+      run: npm install
       
     - name: Package Extension
       run: npm run package
