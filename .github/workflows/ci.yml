@@ -54,14 +54,16 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+        npm install -g @vscode/vsce
       
     - name: Package Extension
-      run: npm run package
+      run: vsce package
       
     - name: Publish to Marketplace
       if: success()
-      run: npx vsce publish
+      run: vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
         
