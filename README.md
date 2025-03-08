@@ -2,14 +2,6 @@
 
 A Visual Studio Code extension for downloading and managing SAMP/open.mp packages.
 
-## ⚠️ Development Status
-
-**IMPORTANT: This extension is currently in early development stage.**
-
-- Only a limited number of packages can be downloaded at this time
-- Some repositories may not work correctly due to different structures
-- More features and compatibility improvements will be added in future updates
-
 ## Features
 
 - Download SAMP/open.mp packages from GitHub using the format `owner/repo`
@@ -17,6 +9,7 @@ A Visual Studio Code extension for downloading and managing SAMP/open.mp package
 - Download include files (.inc) from GitHub repositories
 - Download plugin files (.dll and .so) from the latest GitHub releases
 - Support for pawno/qawno folder structures
+- Smart handling of special plugins and components
 
 ## Requirements
 
@@ -28,11 +21,26 @@ A Visual Studio Code extension for downloading and managing SAMP/open.mp package
 
 ## Installation
 
-1. Download the `.vsix` file from the releases
-2. Open VS Code
-3. Go to Extensions view (Ctrl+Shift+X)
-4. Click on the "..." menu in the top-right corner
-5. Select "Install from VSIX..." and choose the downloaded file
+You can install this extension from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dunningkrueg.pawn-package).
+
+There are several ways to install:
+
+1. **Via VSCode Marketplace:**
+   - Open VS Code
+   - Click the Extensions icon in the sidebar (Ctrl+Shift+X)
+   - Search for "Pawn Package"
+   - Click Install
+
+2. **Via Quick Open:**
+   - Press Ctrl+P
+   - Type `ext install dunningkrueg.pawn-package`
+   - Press Enter
+
+3. **Via Command Palette:**
+   - Press Ctrl+Shift+P
+   - Type `Extensions: Install Extension`
+   - Type `dunningkrueg.pawn-package`
+   - Press Enter
 
 ## Usage
 
@@ -48,23 +56,19 @@ A Visual Studio Code extension for downloading and managing SAMP/open.mp package
 
 ## Supported Packages
 
-Currently, the extension works best with repositories that have:
+The extension supports repositories with:
 - Include files (.inc) in the root or in an "include" directory
 - Plugin files (.dll and .so) in the latest release assets
+- Special plugins that need to be in the root directory
+- Component files in dedicated folders
 
-## Known Issues
+## Features Coming Soon
 
-- Some repositories with non-standard structures may not download correctly
-- Repositories without releases won't have plugin files downloaded
-- Deep nested include files might not be detected properly
-
-## Upcoming Features
-
-- Support for more repository structures
 - Package dependency management
 - Version control for packages
-- Custom download locations
 - Package update notifications
+- Custom download locations
+- Improved repository structure support
 
 ## License
 
@@ -72,4 +76,4 @@ Currently, the extension works best with repositories that have:
 
 ---
 
-If you encounter any issues or have suggestions, please report them on the GitHub repository. 
+Found a bug or have a suggestion? Please open an issue on the GitHub repository. 

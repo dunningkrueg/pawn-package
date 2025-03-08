@@ -2,11 +2,12 @@
   "name": "pawn-package",
   "displayName": "Pawn Package",
   "description": "Download and manage SAMP/open.mp packages (includes and plugins)",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "publisher": "dunningkrueg",
   "author": {
     "name": "dunningkrueg"
   },
+  "icon": "resources/logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/dunningkrueg/pawn-package.git"
@@ -27,11 +28,11 @@
     "commands": [
       {
         "command": "pawnPackage.downloadPackage",
-        "title": "Pawn Package: Download Package"
+        "title": "Download Package"
       },
       {
         "command": "pawnPackage.scanWorkspace",
-        "title": "Pawn Package: Scan Workspace"
+        "title": "Scan Workspace"
       }
     ]
   },
