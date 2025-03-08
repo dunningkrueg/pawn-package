@@ -62,14 +62,6 @@ The extension supports repositories with:
 - Special plugins that need to be in the root directory
 - Component files in dedicated folders
 
-## Features Coming Soon
-
-- Package dependency management
-- Version control for packages
-- Package update notifications
-- Custom download locations
-- Improved repository structure support
-
 ## License
 
 [ISC](LICENSE)
