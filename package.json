@@ -40,7 +40,6 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "package": "vsce package"
   },
@@ -54,9 +53,6 @@
     "@types/vscode": "^1.93.0",
     "@types/tar": "^6.1.10",
     "@types/decompress": "^4.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.56.0",
     "typescript": "^5.7.3"
   },
   "dependencies": {
